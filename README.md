@@ -95,8 +95,7 @@ The demo will:
 
 - `src/`: Smart contracts
   - `SilverBackToken.sol`: Main token contract
-  - `SilverTrading.sol`: Trading contract
-  - `SilverPriceFeed.sol`: Price feed for silver (maintained from original implementation)
+  - `SilverTrading.sol`: Trading contract for direct ETH/token swaps
 - `test/`: Test files for the contracts
 - `script/`: Deployment and demo scripts
 
@@ -107,10 +106,9 @@ eSILVST tokens are 1:1 backed by physical silver reserves, with each token repre
 ### Key Features
 
 - **Full Silver Backing**: Each eSILVST token is backed by 1 troy ounce of physical silver
-- **Real-time Price Updates**: Integration with silver price feeds for accurate market pricing
-- **Decentralized Trading**: Direct buy/sell functionality through smart contracts
+- **Direct ETH Trading**: Buy and sell tokens directly using ETH
 - **Transparent Reserves**: Public verification of silver reserves
-- **Uniswap V3 Integration**: Deep liquidity pools for efficient trading
+- **Fixed Exchange Rate**: Trading based on current ETH/silver market prices
 
 ## Architecture
 
@@ -121,20 +119,10 @@ eSILVST tokens are 1:1 backed by physical silver reserves, with each token repre
    - Tracks total supply and silver reserves
    - Implements minting and burning functionality
 
-2. **SilverTraderV2**
-   - Handles buy/sell operations
+2. **SilverTrading**
+   - Handles buy/sell operations with ETH
    - Manages ETH/silver conversions
-   - Integrates with price feeds
-
-3. **SilverPriceFeed**
-   - Provides real-time silver price data
-   - Supports multiple price sources
-   - Includes mock implementation for testing
-
-4. **SilverUniswapPool**
-   - Manages liquidity pools on Uniswap V3
-   - Handles price impact and slippage
-   - Provides additional trading venue
+   - Owner can update market prices
 
 ### Technical Stack
 
@@ -143,8 +131,6 @@ eSILVST tokens are 1:1 backed by physical silver reserves, with each token repre
 - **Testing**: Forge
 - **Dependencies**:
   - OpenZeppelin Contracts
-  - Uniswap V3 Core
-  - Uniswap V3 Periphery
 
 ## Security
 

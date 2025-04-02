@@ -76,3 +76,29 @@ At each step, ask yourself: "Am I adding any functionality or complexity that wa
   - Show complete trace of asset movements
   - Include all user steps and prerequisites
   - Document before/after states 
+
+# Verification Before Assertion
+
+- Always verify claims before asserting them to the user
+  - Check if contracts are verified on Etherscan before directing users there
+  - Test commands locally before suggesting them to the user
+  - Validate assumptions about available functionality
+  - Confirm accessibility of resources you recommend
+  
+- For blockchain interactions:
+  - Verify contract deployment status before discussing interaction methods
+  - Test function calls before claiming they will work
+  - Check contract verification status on block explorers
+  - Verify contract permissions and access controls
+  
+- When suggesting solutions:
+  - Run a simplified test case first to verify it works
+  - Check for potential error conditions
+  - Validate that suggested tools and services are actually available
+  - Prefer direct evidence over theoretical assumptions
+
+- Document verification steps:
+  - Show the commands used to verify
+  - Include output from verification attempts
+  - Acknowledge when verification fails
+  - Present alternatives when the primary option doesn't work 

@@ -1,8 +1,74 @@
 > ⚠️ **Disclaimer**: This repository is entirely vibe coded. While we strive for excellence, please use at your own risk.
 
-# eSILVST - Silver-Backed Digital Token
+# eSILVST - Silver-Backed Token System
 
-eSILVST is a decentralized silver-backed token that enables users to trade physical silver exposure through the Ethereum blockchain. Built with a focus on transparency, security, and user experience, eSILVST represents a new way to access precious metals markets.
+eSILVST is a silver-backed token system where 1 token represents 1 troy ounce of physical silver. The project implements a robust trading system allowing users to buy and sell tokens using ETH at current market rates.
+
+## Components
+
+### SilverBackToken Contract
+
+A ERC20-compliant token contract with the following features:
+- 1:1 backing of tokens with physical silver reserves
+- Trader authorization system with minting limits
+- Ability to mint and burn tokens while maintaining reserve ratio
+- Pause functionality for emergency situations
+
+### SilverTrading Contract
+
+Handles the buying and selling of tokens with ETH:
+- Price feeds for silver and ETH (initialized at $29.50/oz for silver, $3,250 for ETH)
+- Trading functionality to buy tokens with ETH and sell tokens for ETH
+- Trading limits to control how many tokens can be minted
+- Automatic price conversion calculations
+
+## Trader Authorization System
+
+The new trader authorization system allows:
+- Owner to authorize specific contracts as traders
+- Setting and updating minting limits for each trader
+- Tracking how much each trader has minted and burned
+- Preventing traders from exceeding their limits
+
+## Getting Started
+
+### Prerequisites
+
+- Foundry installed (https://book.getfoundry.sh/)
+
+### Build
+
+```shell
+$ forge build
+```
+
+### Test
+
+```shell
+$ forge test
+```
+
+### Deploy
+
+```shell
+$ forge script script/Deploy.s.sol:Deploy --rpc-url <your_rpc_url> --private-key <your_private_key>
+```
+
+## Key Features
+
+- **Silver Backing**: Every token is backed by 1 troy ounce of silver.
+- **Trader Authorization**: Only authorized contracts can mint tokens within defined limits.
+- **Reserve Ratio**: The system maintains a proper reserve ratio at all times.
+- **Market Price Trading**: Buy and sell tokens at current market prices.
+
+## Project Structure
+
+- `src/`: Smart contracts
+  - `SilverBackToken.sol`: Main token contract
+  - `SilverTrading.sol`: Trading contract
+  - `SilverPriceFeed.sol`: Price feed for silver (maintained from original implementation)
+- `test/`: Test files for the contracts
+- `script/`: Deployment and demo scripts
 
 ## Overview
 
@@ -42,54 +108,13 @@ eSILVST tokens are 1:1 backed by physical silver reserves, with each token repre
 
 ### Technical Stack
 
-- **Smart Contracts**: Solidity 0.7.6
+- **Smart Contracts**: Solidity 0.8.20
 - **Development Framework**: Foundry
 - **Testing**: Forge
 - **Dependencies**:
   - OpenZeppelin Contracts
   - Uniswap V3 Core
   - Uniswap V3 Periphery
-
-## Getting Started
-
-### Prerequisites
-
-- Foundry
-- Node.js
-- Git
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/blockapps/eSILVST.git
-cd eSILVST
-```
-
-2. Install dependencies:
-```bash
-forge install
-```
-
-3. Set up environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-### Testing
-
-Run the test suite:
-```bash
-forge test
-```
-
-### Deployment
-
-Deploy to Sepolia testnet:
-```bash
-forge script script/Deploy.s.sol:DeployScript --rpc-url ${SEPOLIA_RPC_URL} --broadcast --verify
-```
 
 ## Security
 

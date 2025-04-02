@@ -6,48 +6,60 @@ import "../src/SilverBackToken.sol";
 import "../src/SilverTrading.sol";
 import "../src/SilverPriceFeed.sol";
 
+/**
+ * @title DeployScript
+ * @notice Script for deploying the eSILVST contracts
+ * 
+ * This script performs the following actions:
+ * 1. Deploys the SilverPriceFeed with initial price of $29.50/oz
+ * 2. Deploys the SilverBackToken contract
+ * 3. Sets the initial silver reserve to 1000 troy ounces
+ * 4. Deploys the SilverTrading contract with a 500 token trading limit
+ * 5. Authorizes the trading contract as a trader with the set limit
+ */
 contract DeployScript is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        console.log("=== Deploying eSILVST Contracts ===");
-
         // Deploy price feed first
         SilverPriceFeed priceFeed = new SilverPriceFeed(2950 * 1e6); // $29.50 per oz
-        console.log("SilverPriceFeed deployed to:", address(priceFeed));
 
         // Deploy SilverBackToken
         SilverBackToken token = new SilverBackToken();
-        console.log("SilverBackToken deployed to:", address(token));
         
         // Set initial silver reserve (1000 troy ounces)
         token.updateSilverReserve(1000);
-        console.log("Set initial silver reserve to 1000 troy ounces");
 
         // Deploy SilverTrading with 500 token limit
         uint256 tradingLimit = 500 * 1e18; // 500 tokens
         SilverTrading trading = new SilverTrading(address(token), tradingLimit);
-        console.log("SilverTrading deployed to:", address(trading));
         
         // Authorize trading contract as a trader
         token.authorizeTrader(address(trading), tradingLimit);
-        console.log("Authorized SilverTrading as a trader with limit:", tradingLimit);
-
-        // Fund the trading contract with some ETH for demonstration
-        // Note: In a real scenario, the contract would receive ETH from users
-        // payable(address(trading)).transfer(1 ether);
-        console.log("=== Deployment Complete ===");
 
         vm.stopBroadcast();
     }
 }
 
+/**
+ * @title SepoliaDemo
+ * @notice Script for demonstrating the eSILVST trading functionality
+ * 
+ * This script demonstrates a full trading workflow:
+ * 1. Buying tokens with 0.1 ETH
+ * 2. Selling half of the purchased tokens back for ETH
+ * 
+ * Requirements:
+ * - Set TOKEN_ADDRESS in .env to the deployed token address
+ * - Set TRADING_ADDRESS in .env to the deployed trading address
+ * - Set USER_PRIVATE_KEY in .env to a private key with some Sepolia ETH
+ */
 contract SepoliaDemo is Script {
     function run() public {
         // Load the deployed contracts
         address tokenAddress = vm.envAddress("TOKEN_ADDRESS");
-        address tradingAddress = vm.envAddress("TRADING_ADDRESS");
+        address payable tradingAddress = payable(vm.envAddress("TRADING_ADDRESS"));
         SilverBackToken token = SilverBackToken(tokenAddress);
         SilverTrading trading = SilverTrading(tradingAddress);
         
@@ -55,41 +67,18 @@ contract SepoliaDemo is Script {
         uint256 userPrivateKey = vm.envUint("USER_PRIVATE_KEY");
         address user = vm.addr(userPrivateKey);
         
-        console.log("=== Running eSILVST Demo ===");
-        console.log("User address:", user);
-        console.log("Token address:", tokenAddress);
-        console.log("Trading address:", tradingAddress);
-        
-        // Show initial state
-        console.log("\n=== Initial State ===");
-        console.log("User ETH balance:", address(user).balance / 1e18, "ETH");
-        console.log("User token balance:", token.balanceOf(user) / 1e18, "eSILVST");
-        console.log("Trading contract ETH balance:", address(trading).balance / 1e18, "ETH");
-        console.log("Total token supply:", token.totalSupply() / 1e18, "eSILVST");
-        console.log("Silver reserve:", token.totalSilverReserve(), "troy ounces");
-        
-        // User buys tokens with ETH
+        // Start the user transactions
         vm.startBroadcast(userPrivateKey);
         
-        console.log("\n=== Buying Tokens with ETH ===");
+        // 1. User buys tokens with ETH
         uint256 ethToSpend = 0.1 ether;
         uint256 expectedTokens = trading.getTokensForETH(ethToSpend);
-        console.log("Spending", ethToSpend / 1e18, "ETH to buy approximately", expectedTokens / 1e18, "eSILVST tokens");
-        
         trading.buyTokensWithETH{value: ethToSpend}();
         
-        console.log("\n=== After Buying ===");
-        console.log("User ETH balance:", address(user).balance / 1e18, "ETH");
-        console.log("User token balance:", token.balanceOf(user) / 1e18, "eSILVST");
-        console.log("Trading contract ETH balance:", address(trading).balance / 1e18, "ETH");
-        
-        // User sells half the tokens for ETH
-        console.log("\n=== Selling Tokens for ETH ===");
+        // 2. User sells half the tokens for ETH
         uint256 userBalance = token.balanceOf(user);
         uint256 tokensToSell = userBalance / 2;
         uint256 expectedEth = trading.getETHForTokens(tokensToSell);
-        
-        console.log("Selling", tokensToSell / 1e18, "eSILVST tokens for approximately", expectedEth / 1e18, "ETH");
         
         // Approve the trading contract to spend the tokens
         token.approve(address(trading), tokensToSell);
@@ -97,14 +86,6 @@ contract SepoliaDemo is Script {
         // Sell the tokens
         trading.sellTokensForETH(tokensToSell);
         
-        console.log("\n=== After Selling ===");
-        console.log("User ETH balance:", address(user).balance / 1e18, "ETH");
-        console.log("User token balance:", token.balanceOf(user) / 1e18, "eSILVST");
-        console.log("Trading contract ETH balance:", address(trading).balance / 1e18, "ETH");
-        console.log("Total token supply:", token.totalSupply() / 1e18, "eSILVST");
-        
         vm.stopBroadcast();
-        
-        console.log("\n=== Demo Complete ===");
     }
 } 

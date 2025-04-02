@@ -102,3 +102,34 @@ At each step, ask yourself: "Am I adding any functionality or complexity that wa
   - Include output from verification attempts
   - Acknowledge when verification fails
   - Present alternatives when the primary option doesn't work 
+
+# Test First, Commit Later
+
+- ALWAYS test changes thoroughly before committing code
+  - Run actual tests on real environments, not just simulations
+  - Verify that features work end-to-end, not just in isolated components
+  - Do not commit code that hasn't been tested in the actual target environment
+  - Test with real data and real infrastructure where possible
+
+- Before deploying blockchain contracts:
+  - Deploy to testnet first and verify all functionality works
+  - Check that verification actually succeeded on block explorers
+  - Confirm transactions complete as expected with real wallets
+  - Test the entire user flow from start to finish
+
+- For any assertions about code or functionality:
+  - Test the exact command or function you are suggesting
+  - Obtain and show concrete evidence that it works
+  - Do not say "this will work" without actually trying it
+  - If you cannot test something, explicitly state that it's untested
+
+- Never rely on assumptions:
+  - "It should work" is not acceptable - verify that it DOES work
+  - "This is how it typically works" is not evidence - test the specific case
+  - Do not extrapolate from similar cases - test the exact scenario
+
+- If you cannot test something:
+  - Clearly state that the suggestion is untested
+  - Explain the limitations of your testing
+  - Provide detailed instructions for the user to test it themselves
+  - Avoid making definitive claims about untested functionality 

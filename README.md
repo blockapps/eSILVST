@@ -48,11 +48,41 @@ $ forge build
 $ forge test
 ```
 
-### Deploy
+### Deploy to Sepolia
 
-```shell
-$ forge script script/Deploy.s.sol:Deploy --rpc-url <your_rpc_url> --private-key <your_private_key>
+Set up environment variables in a `.env` file:
 ```
+PRIVATE_KEY=your_private_key
+SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your_api_key
+```
+
+Deploy the contracts:
+```shell
+$ source .env
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify
+```
+
+After deployment, note the contract addresses printed in the console for TOKEN_ADDRESS and TRADING_ADDRESS.
+
+### Running the End-to-End Demo on Sepolia
+
+Set up additional environment variables:
+```
+TOKEN_ADDRESS=deployed_token_address
+TRADING_ADDRESS=deployed_trading_address
+USER_PRIVATE_KEY=your_user_private_key_with_some_sepolia_eth
+```
+
+Run the demo:
+```shell
+$ source .env
+$ forge script script/Deploy.s.sol:SepoliaDemo --rpc-url $SEPOLIA_RPC_URL --private-key $USER_PRIVATE_KEY
+```
+
+The demo will:
+1. Buy tokens with 0.1 ETH from your user account
+2. Sell half of the tokens back for ETH
+3. Show the state at each step (balances, token supply, etc.)
 
 ## Key Features
 

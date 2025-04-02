@@ -1,36 +1,34 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.20;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ISilverPriceFeed} from "./interfaces/ISilverPriceFeed.sol";
 
 contract SilverPriceFeed is ISilverPriceFeed, Ownable {
-    uint256 public override price;
-    address private priceProvider;
+    uint256 private _price; // Silver price in USD (8 decimals)
+    uint256 private _lastUpdated; // Timestamp of last update
     
-    event PriceUpdated(uint256 newPrice);
-    event PriceProviderUpdated(address newProvider);
+    event PriceUpdated(uint256 oldPrice, uint256 newPrice);
     
-    constructor(uint256 _initialPrice) {
-        require(_initialPrice > 0, "Initial price must be positive");
-        price = _initialPrice;
-        priceProvider = msg.sender;
+    constructor(uint256 initialPrice) Ownable(msg.sender) {
+        require(initialPrice > 0, "Initial price must be positive");
+        _price = initialPrice;
+        _lastUpdated = block.timestamp;
     }
     
-    modifier onlyPriceProvider() {
-        require(msg.sender == priceProvider, "Not authorized");
-        _;
+    function price() external view override returns (uint256) {
+        return _price;
     }
     
-    function updatePrice(uint256 _newPrice) external override onlyOwner {
-        require(_newPrice > 0, "New price must be positive");
-        price = _newPrice;
-        emit PriceUpdated(_newPrice);
+    function updatePrice(uint256 newPrice) external override onlyOwner {
+        require(newPrice > 0, "New price must be positive");
+        uint256 oldPrice = _price;
+        _price = newPrice;
+        _lastUpdated = block.timestamp;
+        emit PriceUpdated(oldPrice, newPrice);
     }
     
-    function updatePriceProvider(address newProvider) external override onlyOwner {
-        require(newProvider != address(0), "Invalid address");
-        priceProvider = newProvider;
-        emit PriceProviderUpdated(newProvider);
+    function lastUpdated() external view override returns (uint256) {
+        return _lastUpdated;
     }
 } 

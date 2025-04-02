@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
+import "forge-std/console.sol";
 import "../src/SilverBackToken.sol";
 import "../src/SilverTrading.sol";
 import "../src/SilverPriceFeed.sol";
@@ -38,54 +39,11 @@ contract DeployScript is Script {
         // Authorize trading contract as a trader
         token.authorizeTrader(address(trading), tradingLimit);
 
-        vm.stopBroadcast();
-    }
-}
+        // Log deployed contract addresses
+        console.log("Deployed SilverBackToken at:", address(token));
+        console.log("Deployed SilverTrading at:", address(trading));
+        console.log("Deployed SilverPriceFeed at:", address(priceFeed));
 
-/**
- * @title SepoliaDemo
- * @notice Script for demonstrating the eSILVST trading functionality
- * 
- * This script demonstrates a full trading workflow:
- * 1. Buying tokens with 0.1 ETH
- * 2. Selling half of the purchased tokens back for ETH
- * 
- * Requirements:
- * - Set TOKEN_ADDRESS in .env to the deployed token address
- * - Set TRADING_ADDRESS in .env to the deployed trading address
- * - Set USER_PRIVATE_KEY in .env to a private key with some Sepolia ETH
- */
-contract SepoliaDemo is Script {
-    function run() public {
-        // Load the deployed contracts
-        address tokenAddress = vm.envAddress("TOKEN_ADDRESS");
-        address payable tradingAddress = payable(vm.envAddress("TRADING_ADDRESS"));
-        SilverBackToken token = SilverBackToken(tokenAddress);
-        SilverTrading trading = SilverTrading(tradingAddress);
-        
-        // Demo parameters
-        uint256 userPrivateKey = vm.envUint("USER_PRIVATE_KEY");
-        address user = vm.addr(userPrivateKey);
-        
-        // Start the user transactions
-        vm.startBroadcast(userPrivateKey);
-        
-        // 1. User buys tokens with ETH
-        uint256 ethToSpend = 0.1 ether;
-        uint256 expectedTokens = trading.getTokensForETH(ethToSpend);
-        trading.buyTokensWithETH{value: ethToSpend}();
-        
-        // 2. User sells half the tokens for ETH
-        uint256 userBalance = token.balanceOf(user);
-        uint256 tokensToSell = userBalance / 2;
-        uint256 expectedEth = trading.getETHForTokens(tokensToSell);
-        
-        // Approve the trading contract to spend the tokens
-        token.approve(address(trading), tokensToSell);
-        
-        // Sell the tokens
-        trading.sellTokensForETH(tokensToSell);
-        
         vm.stopBroadcast();
     }
 } 

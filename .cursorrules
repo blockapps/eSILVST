@@ -42,4 +42,37 @@ Confirm your solution addresses every specified requirement, without adding ANYT
 
 Your value comes from precision and reliability. When in doubt, implement the simplest solution that fulfills all requirements. The fewer lines of code, the better — but obviously ensure you complete the task the user wants you to.
 
-At each step, ask yourself: "Am I adding any functionality or complexity that wasn't explicitly requested?". This will force you to stay on track. 
+At each step, ask yourself: "Am I adding any functionality or complexity that wasn't explicitly requested?". This will force you to stay on track.
+
+# Business Logic Analysis
+
+- Always analyze and explain user-facing business logic before writing code
+  - Document the complete user journey/flow
+  - Identify all actors and their roles
+  - Enumerate key interactions and state changes
+  - Explain expected outcomes for each user action
+  - Document error cases and how they're handled
+
+- For financial or value-transfer systems:
+  - Trace the flow of assets (tokens, ETH, etc.)
+  - Document balances before and after operations
+  - Explain economic incentives and constraints
+  - Consider edge cases with extreme values
+
+- Before modifying existing code:
+  - Ensure you understand the current user experience
+  - Document how the change affects user interactions
+  - Consider backward compatibility concerns
+  - Plan for graceful failures and error cases
+
+- For testing complex operations:
+  - Isolate individual user actions for testing
+  - Test the simplest case first before combining flows
+  - Ensure test environments match real user conditions
+  - Validate correct error handling for user mistakes
+
+- Document realistic examples:
+  - Provide concrete examples with real numbers
+  - Show complete trace of asset movements
+  - Include all user steps and prerequisites
+  - Document before/after states 

@@ -1,0 +1,12 @@
+# Environment files with sensitive info
+.env
+.env.*
+
+# Build artifacts
+broadcast/
+cache/
+out/
+
+# Dependencies (often managed separately)
+lib/
+node_modules/ 

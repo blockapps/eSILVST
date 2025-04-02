@@ -20,7 +20,7 @@ contract SilverTrading is Ownable {
     event ETHToTokens(address indexed user, uint256 ethAmount, uint256 tokensAmount);
     event TradingLimitUpdated(uint256 newLimit);
     
-    constructor(address _silverToken, uint256 _tradingLimit) {
+    constructor(address _silverToken, uint256 _tradingLimit) Ownable(msg.sender) {
         silverToken = SilverBackToken(_silverToken);
         tradingLimit = _tradingLimit;
         

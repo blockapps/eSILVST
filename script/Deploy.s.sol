@@ -14,7 +14,7 @@ import "../src/SilverTrading.sol";
  * 1. Deploys the SilverBackToken contract
  * 2. Sets the initial silver reserve to 1000 troy ounces
  * 3. Deploys the SilverTrading contract with a 500 token trading limit
- * 4. Authorizes the trading contract as a trader with the set limit
+ * 4. Mints initial tokens to the trading contract
  * 
  * To deploy and verify:
  * forge script script/Deploy.s.sol:DeployScript --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
@@ -30,16 +30,17 @@ contract DeployScript is Script {
         // Set initial silver reserve (1000 troy ounces)
         token.updateSilverReserve(1000);
 
-        // Deploy SilverTrading with 500 token limit
-        uint256 tradingLimit = 500 * 1e18; // 500 tokens
-        SilverTrading trading = new SilverTrading(address(token), tradingLimit);
+        // Deploy SilverTrading - Removed tradingLimit argument
+        SilverTrading trading = new SilverTrading(address(token));
         
-        // Authorize trading contract as a trader
-        token.authorizeTrader(address(trading), tradingLimit);
+        // Mint initial tokens to the trading contract (e.g., 500 tokens)
+        uint256 initialTokensForTrading = 500 * 1e18; 
+        token.mint(address(trading), initialTokensForTrading);
 
         // Log deployed contract addresses
         console.log("Deployed SilverBackToken at:", address(token));
         console.log("Deployed SilverTrading at:", address(trading));
+        console.log("Minted", initialTokensForTrading / 1e18, "tokens to trading contract");
         
         // Add verification check reminder
         if (block.chainid != 31337) { // Only for real networks

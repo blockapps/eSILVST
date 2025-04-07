@@ -13,7 +13,7 @@ contract SilverTradingTest is Test {
     address user = address(0x2);
     
     uint256 constant INITIAL_RESERVE = 1000; // 1000 troy ounces
-    uint256 constant TRADING_LIMIT = 500 * 1e18; // 500 tokens
+    uint256 constant INITIAL_TOKENS_FOR_TRADING = 500 * 1e18; // 500 tokens
     
     function setUp() public {
         vm.startPrank(owner);
@@ -23,10 +23,10 @@ contract SilverTradingTest is Test {
         token.updateSilverReserve(INITIAL_RESERVE);
         
         // Deploy trading contract
-        trading = new SilverTrading(address(token), TRADING_LIMIT);
+        trading = new SilverTrading(address(token));
         
-        // Authorize trading contract
-        token.authorizeTrader(address(trading), TRADING_LIMIT);
+        // Mint tokens to trading contract for liquidity
+        token.mint(address(trading), INITIAL_TOKENS_FOR_TRADING);
         
         // Fund trading contract with ETH
         vm.deal(address(trading), 10 ether);
@@ -41,7 +41,8 @@ contract SilverTradingTest is Test {
         
         // Calculate expected tokens
         uint256 expectedTokens = trading.getTokensForETH(ethToSpend);
-        
+        uint256 initialTradingBalance = token.balanceOf(address(trading));
+
         // Buy tokens
         vm.startPrank(user);
         trading.buyTokensWithETH{value: ethToSpend}();
@@ -51,21 +52,25 @@ contract SilverTradingTest is Test {
         assertEq(token.balanceOf(user), expectedTokens, "User should receive correct token amount");
         assertEq(address(user).balance, 0, "User ETH balance should be 0");
         assertEq(address(trading).balance, 11 ether, "Trading contract should have more ETH");
+        // Verify trading contract token balance decreased
+        assertEq(token.balanceOf(address(trading)), initialTradingBalance - expectedTokens, "Trading contract token balance incorrect");
     }
     
     function testSellTokensForETH() public {
-        // Setup: Buy tokens first
-        uint256 ethToSpend = 1 ether;
-        vm.deal(user, ethToSpend);
+        // Setup: Need tokens to sell. Mint some to user directly for simplicity in test
+        uint256 userInitialTokens = 100 * 1e18;
+        vm.startPrank(owner);
+        token.mint(user, userInitialTokens);
+        vm.stopPrank();
         
-        vm.startPrank(user);
-        trading.buyTokensWithETH{value: ethToSpend}();
-        
-        // Get token balance
-        uint256 tokenBalance = token.balanceOf(user);
-        uint256 tokensToSell = tokenBalance / 2;
-        
+        // Define amount to sell
+        uint256 tokensToSell = userInitialTokens / 2;
+        uint256 initialTradingTokenBalance = token.balanceOf(address(trading));
+        uint256 initialUserEthBalance = address(user).balance;
+        uint256 initialTradingEthBalance = address(trading).balance;
+
         // Approve and sell tokens
+        vm.startPrank(user);
         token.approve(address(trading), tokensToSell);
         
         // Calculate expected ETH return
@@ -76,9 +81,11 @@ contract SilverTradingTest is Test {
         vm.stopPrank();
         
         // Verify results
-        assertEq(token.balanceOf(user), tokenBalance - tokensToSell, "User should have fewer tokens");
-        assertEq(address(user).balance, expectedEthReturn, "User should have received ETH");
-        assertEq(address(trading).balance, 11 ether - expectedEthReturn, "Trading contract should have less ETH");
+        assertEq(token.balanceOf(user), userInitialTokens - tokensToSell, "User should have fewer tokens");
+        assertEq(address(user).balance, initialUserEthBalance + expectedEthReturn, "User should have received ETH");
+        assertEq(address(trading).balance, initialTradingEthBalance - expectedEthReturn, "Trading contract should have less ETH");
+        // Verify trading contract token balance increased
+        assertEq(token.balanceOf(address(trading)), initialTradingTokenBalance + tokensToSell, "Trading contract token balance incorrect");
     }
     
     function testPriceUpdateAffectsExchangeRate() public {
@@ -97,5 +104,73 @@ contract SilverTradingTest is Test {
         
         // Verify that increasing silver price means fewer tokens per ETH
         assertLt(newTokensForOneETH, initialTokensForOneETH, "Increasing silver price should decrease tokens per ETH");
+    }
+    
+    function testRevertWhen_InsufficientTokenReserves() public {
+        // Calculate how many tokens 10 ETH would buy
+        uint256 tokensFor10ETH = trading.getTokensForETH(10 ether);
+        
+        // Make sure this exceeds our initial token allocation to the trading contract
+        assertGt(tokensFor10ETH, INITIAL_TOKENS_FOR_TRADING, "Need more than initial tokens for this test");
+        
+        // Fund user with ETH
+        vm.deal(user, 11 ether);
+        
+        // Try to buy more tokens than available in the trading contract
+        vm.startPrank(user);
+        vm.expectRevert("Insufficient token reserves"); // Should now come from the trading contract check
+        trading.buyTokensWithETH{value: 11 ether}();
+        vm.stopPrank();
+    }
+    
+    function testRevertWhen_SmallTokenAmount() public {
+        // Setup: Mint some tokens directly to user
+        uint256 userInitialTokens = 1 * 1e18;
+        vm.startPrank(owner);
+        token.mint(user, userInitialTokens);
+        vm.stopPrank();
+        
+        vm.startPrank(user);
+        // Try to sell a very small amount that would result in 0 ETH
+        uint256 tinyAmount = 1; // 1 wei of token
+        token.approve(address(trading), tinyAmount);
+        
+        vm.expectRevert("Token amount too small"); // Check in sellTokensForETH
+        trading.sellTokensForETH(tinyAmount);
+        vm.stopPrank();
+    }
+    
+    function testRevertWhen_InsufficientETHInContract() public {
+        // Setup: Mint some tokens directly to user
+        uint256 userInitialTokens = 1 * 1e18;
+        vm.startPrank(owner);
+        token.mint(user, userInitialTokens);
+        vm.stopPrank();
+        
+        // Calculate ETH needed BEFORE draining
+        uint256 ethToSend = trading.getETHForTokens(userInitialTokens);
+        require(ethToSend > 1, "Calculated ETH to send must be > 1 wei for this test");
+
+        // Get the trading contract balance
+        uint256 tradingBalance = address(trading).balance;
+        require(tradingBalance > ethToSend, "Trading contract initial balance must be > ethToSend");
+
+        // Simulate draining ETH directly using vm.deal, leaving 1 wei
+        vm.deal(address(trading), 1);
+        // Optionally, credit the owner with the drained amount (though not strictly necessary for the test)
+        vm.deal(owner, owner.balance + (tradingBalance - 1));
+        
+        // Check the balance was set correctly
+        assertEq(address(trading).balance, 1, "Trading contract should have 1 wei left after vm.deal");
+        
+        // Try to sell tokens when the contract has insufficient ETH (1 wei < ethToSend)
+        vm.startPrank(user);
+        token.approve(address(trading), userInitialTokens);
+        
+        // Use expectRevert with simple bytes(string)
+        vm.expectRevert(bytes("Insufficient ETH in contract"));
+        trading.sellTokensForETH(userInitialTokens);
+        
+        vm.stopPrank();
     }
 } 

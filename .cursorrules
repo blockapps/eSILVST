@@ -133,3 +133,35 @@ At each step, ask yourself: "Am I adding any functionality or complexity that wa
   - Explain the limitations of your testing
   - Provide detailed instructions for the user to test it themselves
   - Avoid making definitive claims about untested functionality 
+
+# Security Best Practices
+
+- NEVER commit sensitive information to version control
+  - API keys must always be stored in environment variables
+  - Private keys must never be hardcoded or committed
+  - Contract addresses should be stored in configuration files
+  - Secrets should be in .env files that are listed in .gitignore
+
+- Before committing any script or code:
+  - Check for hardcoded API keys or tokens
+  - Verify no private keys are included in the code
+  - Ensure sensitive URLs don't contain API keys or credentials
+  - Review any logs or outputs for accidental exposure of secrets
+
+- When writing scripts that use sensitive information:
+  - Always source secrets from environment variables
+  - Use parameter substitution for API endpoints (${API_KEY} not actual keys)
+  - Implement input validation to prevent accidental exposure
+  - Add logging that shows operation success but masks secret values
+
+- When sharing or demonstrating code:
+  - Replace real API keys with placeholders (YOUR_API_KEY_HERE)
+  - Use sample/test addresses rather than production addresses
+  - Create sanitized sample files for documentation
+  - Implement example configurations separate from actual configs
+
+- Regular security audits:
+  - Periodically search codebase for common secret patterns
+  - Run security scanning tools before major commits
+  - Review access logs for any unusual API usage
+  - Rotate API keys if you suspect they've been exposed 

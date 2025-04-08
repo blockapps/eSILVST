@@ -4,14 +4,20 @@
 
 eSILVST is a silver-backed token system where 1 token represents 1 troy ounce of physical silver. The project implements a robust trading system allowing users to buy and sell tokens using ETH at current market rates.
 
+## Deployed Contracts
+
+The contracts have been successfully deployed and verified on Sepolia testnet. The specific contract addresses are not included here as they may change in future deployments.
+
+Both contracts are verified on Etherscan and can be interacted with directly through the Etherscan interface once deployed.
+
 ## Components
 
 ### SilverBackToken Contract
 
 A ERC20-compliant token contract with the following features:
 - 1:1 backing of tokens with physical silver reserves
-- Trader authorization system with minting limits
-- Ability to mint and burn tokens while maintaining reserve ratio
+- Owner-controlled minting and burning of tokens
+- Ability to update physical silver reserves
 - Pause functionality for emergency situations
 
 ### SilverTrading Contract
@@ -19,16 +25,8 @@ A ERC20-compliant token contract with the following features:
 Handles the buying and selling of tokens with ETH:
 - Price feeds for silver and ETH (initialized at $29.50/oz for silver, $3,250 for ETH)
 - Trading functionality to buy tokens with ETH and sell tokens for ETH
-- Trading limits to control how many tokens can be minted
 - Automatic price conversion calculations
-
-## Trader Authorization System
-
-The new trader authorization system allows:
-- Owner to authorize specific contracts as traders
-- Setting and updating minting limits for each trader
-- Tracking how much each trader has minted and burned
-- Preventing traders from exceeding their limits
+- Pre-funded with tokens and ETH to enable immediate trading
 
 ## Getting Started
 
@@ -54,40 +52,64 @@ Set up environment variables in a `.env` file:
 ```
 PRIVATE_KEY=your_private_key
 SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your_api_key
+ETHERSCAN_API_KEY=your_etherscan_api_key
 ```
 
 Deploy the contracts:
+
 ```shell
+# Source environment variables
 $ source .env
-$ forge script script/Deploy.s.sol:DeployScript --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify
+
+# Deploy SilverBackToken
+$ forge create --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast src/SilverBackToken.sol:SilverBackToken
+
+# Set initial silver reserve (1000 troy ounces)
+$ cast send --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY <TOKEN_ADDRESS> "updateSilverReserve(uint256)" 1000
+
+# Deploy SilverTrading (with token address as constructor parameter)
+$ forge create --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast src/SilverTrading.sol:SilverTrading --constructor-args <TOKEN_ADDRESS>
+
+# Mint initial tokens to the trading contract (500 tokens)
+$ cast send --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY <TOKEN_ADDRESS> "mint(address,uint256)" <TRADING_ADDRESS> 500000000000000000000
+
+# Send ETH to the trading contract for liquidity
+$ cast send --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY <TRADING_ADDRESS> --value 0.01ether
+
+# Update prices (optional)
+$ cast send --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY <TRADING_ADDRESS> "updatePrices(uint256,uint256)" 2950000000 325000000000
 ```
 
-After deployment, note the contract addresses printed in the console for TOKEN_ADDRESS and TRADING_ADDRESS.
+### Verify Contracts on Etherscan
 
-### Running the End-to-End Demo on Sepolia
-
-Set up additional environment variables:
-```
-TOKEN_ADDRESS=deployed_token_address
-TRADING_ADDRESS=deployed_trading_address
-USER_PRIVATE_KEY=your_user_private_key_with_some_sepolia_eth
-```
-
-Run the demo:
 ```shell
-$ source .env
-$ forge script script/Deploy.s.sol:SepoliaDemo --rpc-url $SEPOLIA_RPC_URL --private-key $USER_PRIVATE_KEY
+# Verify SilverBackToken
+$ forge verify-contract --chain sepolia --watch <TOKEN_ADDRESS> src/SilverBackToken.sol:SilverBackToken --etherscan-api-key $ETHERSCAN_API_KEY
+
+# Verify SilverTrading
+$ forge verify-contract --chain sepolia --watch <TRADING_ADDRESS> src/SilverTrading.sol:SilverTrading --constructor-args $(cast abi-encode "constructor(address)" <TOKEN_ADDRESS>) --etherscan-api-key $ETHERSCAN_API_KEY
 ```
 
-The demo will:
-1. Buy tokens with 0.1 ETH from your user account
-2. Sell half of the tokens back for ETH
-3. Show the state at each step (balances, token supply, etc.)
+### Interacting with the Contracts
+
+Buy tokens with ETH:
+```shell
+$ cast send --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY <TRADING_ADDRESS> "buyTokensWithETH()" --value 0.001ether
+```
+
+Sell tokens for ETH:
+```shell
+# First approve the trading contract to spend your tokens
+$ cast send --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY <TOKEN_ADDRESS> "approve(address,uint256)" <TRADING_ADDRESS> <AMOUNT>
+
+# Then sell tokens
+$ cast send --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY <TRADING_ADDRESS> "sellTokensForETH(uint256)" <AMOUNT>
+```
 
 ## Key Features
 
 - **Silver Backing**: Every token is backed by 1 troy ounce of silver.
-- **Trader Authorization**: Only authorized contracts can mint tokens within defined limits.
+- **Owner Control**: Only the owner can mint tokens and update the silver reserve.
 - **Reserve Ratio**: The system maintains a proper reserve ratio at all times.
 - **Market Price Trading**: Buy and sell tokens at current market prices.
 
@@ -103,27 +125,6 @@ The demo will:
 
 eSILVST tokens are 1:1 backed by physical silver reserves, with each token representing one troy ounce of silver. The system is designed to maintain full collateralization while providing seamless trading capabilities through smart contracts.
 
-### Key Features
-
-- **Full Silver Backing**: Each eSILVST token is backed by 1 troy ounce of physical silver
-- **Direct ETH Trading**: Buy and sell tokens directly using ETH
-- **Transparent Reserves**: Public verification of silver reserves
-- **Fixed Exchange Rate**: Trading based on current ETH/silver market prices
-
-## Architecture
-
-### Core Components
-
-1. **SilverBackToken (eSILVST)**
-   - ERC20 token representing physical silver
-   - Tracks total supply and silver reserves
-   - Implements minting and burning functionality
-
-2. **SilverTrading**
-   - Handles buy/sell operations with ETH
-   - Manages ETH/silver conversions
-   - Owner can update market prices
-
 ### Technical Stack
 
 - **Smart Contracts**: Solidity 0.8.20
@@ -131,14 +132,6 @@ eSILVST tokens are 1:1 backed by physical silver reserves, with each token repre
 - **Testing**: Forge
 - **Dependencies**:
   - OpenZeppelin Contracts
-
-## Security
-
-- All contracts are audited
-- Full test coverage
-- Time-locked admin functions
-- Pausable functionality for emergency situations
-- Regular reserve verification
 
 ## License
 

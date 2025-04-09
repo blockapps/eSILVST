@@ -80,6 +80,55 @@ $ cast send --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY <TRADING_ADDRE
 $ cast send --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY <TRADING_ADDRESS> "updatePrices(uint256,uint256)" 2950000000 325000000000
 ```
 
+### Automated Price Updates
+
+The project includes an automated price update script that fetches current silver and ETH prices from external APIs and updates the Trading Contract accordingly.
+
+To set up the automated price updates:
+
+1. **Configure your environment variables**:
+   ```
+   PRIVATE_KEY=your_private_key
+   SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your_api_key
+   MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/your_api_key
+   METALS_API_KEY=your_metals_api_key
+   TOKEN_ADDRESS=your_testnet_token_address
+   TRADING_ADDRESS=your_testnet_trading_address
+   MAINNET_TOKEN_ADDRESS=your_mainnet_token_address
+   MAINNET_TRADING_ADDRESS=your_mainnet_trading_address
+   ```
+
+2. **Run the update script**:
+   
+   For testnet (default):
+   ```shell
+   $ ./update_prices.sh
+   ```
+   
+   For mainnet:
+   ```shell
+   $ ./update_prices.sh mainnet
+   ```
+
+3. **Schedule regular updates**:
+   
+   Set up a cron job to run the script periodically:
+   ```
+   # Run price updates daily at 1:00 AM
+   0 1 * * * cd /path/to/project && ./update_prices.sh
+   
+   # For mainnet (when ready)
+   # 0 1 * * * cd /path/to/project && ./update_prices.sh mainnet
+   ```
+
+The script fetches:
+- Silver prices from Metals Dev API
+- ETH prices from Alchemy API
+- Converts both to the required 8-decimal format
+- Updates the contract with a single transaction
+
+Estimated gas costs per update: ~36,000 gas (approximately $0.75-$3.00 depending on network conditions).
+
 ### Verify Contracts on Etherscan
 
 ```shell
